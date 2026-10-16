@@ -1,0 +1,42 @@
+{
+  "run_id": "fjord-2026-10-16T14:56:10.946531Z",
+  "inputs": 100,
+  "terminal_results": 100,
+  "completed": 100,
+  "runtime_seconds": 151.235,
+  "requests": 401,
+  "bytes_received": 953270,
+  "third_party_cost_usd": 0,
+  "models": [],
+  "apis": [
+    "BRREG Enhetsregisteret",
+    "BRREG Regnskapsregisteret"
+  ],
+  "stage": "official identity, accounts, roles and workplaces",
+  "competition_qualification": "not evaluated",
+  "external_coverage": "not implemented",
+  "p50_company_runtime_ms": 7859,
+  "p95_company_runtime_ms": 15983,
+  "companies_with_errors": 0,
+  "companies_with_available_fields": {
+    "bankrupt": 100,
+    "employees": 17,
+    "financial.annual_result": 100,
+    "financial.assets": 100,
+    "financial.debt": 98,
+    "financial.equity": 99,
+    "financial.operating_result": 99,
+    "financial.revenue": 76,
+    "industry": 100,
+    "latest_filing_year": 100,
+    "legal_form": 100,
+    "legal_name": 100,
+    "liquidating": 100,
+    "registered_address": 100,
+    "registered_roles": 100,
+    "registered_workplaces": 100,
+    "registry_website_candidate": 11
+  },
+  "independently_measured_precision_recall": null,
+  "metrics_note": "Percentiles and field counts derived from recorded result envelopes after collection. Snapshot adapter added afterward; no claim this run exercised it."
+}

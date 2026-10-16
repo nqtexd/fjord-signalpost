@@ -1,0 +1,18 @@
+{
+  "run_id": "fjord-2026-10-16T14:49:59.142182Z",
+  "inputs": 100,
+  "terminal_results": 100,
+  "completed": 98,
+  "runtime_seconds": 153.953,
+  "requests": 394,
+  "bytes_received": 926454,
+  "third_party_cost_usd": 0,
+  "models": [],
+  "apis": [
+    "BRREG Enhetsregisteret",
+    "BRREG Regnskapsregisteret"
+  ],
+  "stage": "official identity, accounts, roles and workplaces",
+  "competition_qualification": "not evaluated",
+  "external_coverage": "not implemented"
+}
