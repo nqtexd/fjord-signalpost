@@ -64,6 +64,24 @@ class BoundaryTests(unittest.TestCase):
             with self.assertRaises(BudgetError):
                 Client(max_requests=0).get('https://example.com')
 
+    def test_transport_handles_empty_and_exact_length_bodies_without_reading_closed_stream(self):
+        from unittest.mock import MagicMock
+        for payload in [b'', b'abc']:
+            conn = MagicMock()
+            response = conn.getresponse.return_value
+            response.status = 200
+            response.getheader.side_effect = lambda key, default=None: str(len(payload)) if key == 'Content-Length' else 'text/plain' if key == 'Content-Type' else default
+            if not payload:
+                response.fp = None
+            else:
+                def read1(limit):
+                    response.fp = None
+                    return payload
+                response.read1.side_effect = read1
+            with patch('network.PinnedHTTPS', return_value=conn), patch('network.public_addresses', return_value=['93.184.216.34']):
+                result = Client().get('https://example.com')
+            self.assertEqual(result.body, payload)
+
     def test_every_input_including_duplicate_and_invalid_gets_an_envelope(self):
         with tempfile.TemporaryDirectory() as directory:
             src = Path(directory) / 'input.jsonl'

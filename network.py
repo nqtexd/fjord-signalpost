@@ -119,6 +119,8 @@ class Client:
                     chunks = []
                     size = 0
                     while True:
+                        if response.fp is None:
+                            break
                         remaining_read = request_deadline - time.monotonic()
                         if remaining_read <= 0:
                             raise TimeoutError("Source exceeded request time limit")

@@ -49,7 +49,7 @@ def parse_json(raw: bytes):
     return json.loads(raw, parse_constant=lambda value: (_ for _ in ()).throw(ValueError("Non-finite JSON number")))
 
 
-def retrieve(client: Client, org: str, previous: dict | None, run_id: str) -> dict:
+def retrieve(client: Client, org: str, previous: dict | None, run_id: str, web_provider=None) -> dict:
     started = now()
     began = time.monotonic()
     result = {"organisation_number": org, "legal_identity": None,
@@ -102,6 +102,13 @@ def retrieve(client: Client, org: str, previous: dict | None, run_id: str) -> di
             result["errors"].append({"module": family, "kind": type(error).__name__, "message": str(error)[:200]})
             if family == "identity" or isinstance(error, BudgetError):
                 break
+    if web_provider is not None and result['legal_identity']:
+        from footprint import research
+        website = next((c['value'] for c in result['claims'] if c['field'] == 'registry_website_candidate' and c['availability'] == 'available'), None)
+        result['web_research'] = research(org, result['legal_identity']['name'], website, client, web_provider)
+        result['claims'].extend(result['web_research']['claims'])
+        result['evidence'].extend(result['web_research']['evidence'])
+        result['errors'].extend(result['web_research']['errors'])
     try:
         result["changes"] = changes(previous, result)
     except ValueError as error:
@@ -135,6 +142,8 @@ def main():
     parser.add_argument("--seconds", type=int, default=2700)
     parser.add_argument("--registry-snapshot", help="Evaluator-provided JSONL of direct BRREG entity objects")
     parser.add_argument("--registry-as-of", help="Frozen registry timestamp with timezone; required with --registry-snapshot")
+    parser.add_argument("--web-research", action='store_true', help="Optional TinyFish candidate research; requires server-side TINYFISH_API_KEY")
+    parser.add_argument("--max-web-requests", type=int, default=50, help="Separate TinyFish Search/Fetch request cap; free endpoints only")
     args = parser.parse_args()
     inputs = []
     for line in Path(args.input).read_text(encoding="utf-8-sig").splitlines():
@@ -151,6 +160,10 @@ def main():
                 previous[item["organisation_number"]] = item
     client = Client(max_requests=args.max_requests, seconds=args.seconds)
     fetcher = SnapshotClient(client, args.registry_snapshot, args.registry_as_of) if args.registry_snapshot else client
+    web_provider = None
+    if args.web_research:
+        from footprint import TinyFish
+        web_provider = TinyFish(max_requests=args.max_web_requests, deadline=client.deadline)
     began = time.monotonic()
     run_id = "fjord-" + now()
 
@@ -163,7 +176,7 @@ def main():
                     "claims": [], "evidence": [], "changes": [], "errors": [{"kind": "InvalidInput", "message": str(error)}],
                     "operations": {"runtime_ms": 0, "third_party_cost_usd": 0}}
         try:
-            return retrieve(fetcher, org, previous.get(org), run_id)
+            return retrieve(fetcher, org, previous.get(org), run_id, web_provider) if web_provider else retrieve(fetcher, org, previous.get(org), run_id)
         except Exception as error:
             return {"organisation_number": org, "legal_identity": None,
                     "run": {"run_id": run_id, "started_at": now(), "completed_at": now(), "terminal_status": "failed"},
@@ -195,6 +208,14 @@ def main():
               "companies_with_errors": sum(bool(row["errors"]) for row in results),
               "independently_measured_precision_recall": None,
               "frozen_registry_sha256": fetcher.fingerprint if args.registry_snapshot else None}
+    if web_provider:
+        report['web_research'] = {'provider': 'TinyFish', 'requests': web_provider.requests, 'searches': web_provider.searches,
+            'fetches': web_provider.fetches, 'max_requests': args.max_web_requests,
+            'licensed_profile_claims': sum(c['field'] == 'external.licensed_entity_profile' and c['availability'] == 'available' for row in results for c in row['claims']),
+            'candidate_count': sum(len(row.get('web_research', {}).get('candidates', [])) for row in results),
+            'paid_endpoints_used': False, 'source_rights': 'Only the built-in reviewed licensed entity source can publish a claim; other websites remain candidates.'}
+        report['apis'].extend(['TinyFish Search', 'TinyFish Fetch (only if a reviewed source candidate exists)'])
+        report['external_coverage'] = 'Optional licensed-profile discovery; independent precision and recall unmeasured'
     output.with_suffix(".report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
 

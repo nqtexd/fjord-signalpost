@@ -1,0 +1,34 @@
+{
+  "kind": "one-company live browser workflow, not an accuracy benchmark",
+  "organisation_number": "993101583",
+  "run": {
+    "run_id": "fjord-web-2026-10-16T15:35:40.696578Z",
+    "started_at": "2026-10-16T15:35:40.696578Z",
+    "completed_at": "2026-10-16T15:36:23.404481Z",
+    "terminal_status": "completed"
+  },
+  "operations": {
+    "source_fetch_attempts": 4,
+    "runtime_ms": 42703,
+    "third_party_cost_usd": 0,
+    "web_requests": {
+      "searches": 2,
+      "fetches": 1
+    }
+  },
+  "source_requests": 9,
+  "provider_requests": 3,
+  "paid_endpoints_used": false,
+  "web_claims": [
+    {
+      "field": "external.licensed_entity_profile",
+      "availability": "available"
+    },
+    {
+      "field": "external.rendered_identity_proof",
+      "availability": "available"
+    }
+  ],
+  "independent_precision_recall": null,
+  "qualification": "not evaluated"
+}
